@@ -4,10 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),tailwindcss(),],
+  plugins: [react(), tailwindcss()],
   server: {
-    watch: {
-      usePolling: true, // Yeh system ko force karta hai changes check karne ke liye
+    headers: {
+      'Cache-Control': 'no-store',
     },
-  }
+    watch: {
+      usePolling: true,
+    },
+  },
 })
