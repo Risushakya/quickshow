@@ -20,7 +20,13 @@ const port = process.env.PORT || 3000;
 
 await connectDB();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    process.env.CLIENT_URL,
+  ].filter(Boolean),
+  credentials: true,
+}));
 
 // Stripe webhook needs raw body — must be before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
