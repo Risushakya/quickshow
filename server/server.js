@@ -36,7 +36,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Stripe webhook needs raw body — must be before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
