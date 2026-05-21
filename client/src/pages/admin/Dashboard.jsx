@@ -1,4 +1,4 @@
-import { ChartLineIcon, IndianRupeeIcon, PlayCircleIcon, StarIcon, UserIcon } from 'lucide-react'
+import { ChartLineIcon, IndianRupeeIcon, MapPinIcon, PlayCircleIcon, UserIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import Loading from '../../components/Loading'
@@ -74,25 +74,69 @@ const Dashboard = () => {
 
       <p className="mt-10 text-lg font-medium">Active Shows</p>
 
-      <div className="flex flex-wrap gap-6 mt-4 max-w-5xl">
+      <div className="relative mt-4 max-w-4xl space-y-8">
         <BlurCircle top="100px" left="-10%" />
-        {dashboardData.activeShows.map((show) => (
-          <div
-            key={show._id}
-            className="w-55 rounded-lg overflow-hidden h-full pb-3 bg-primary/10 border border-primary/20 hover:-translate-y-1 transition duration-300"
-          >
-            <img src={show.movie.poster_path} alt="" className="h-60 w-full object-cover" />
-            <p className="font-medium p-2 truncate">{show.movie.title}</p>
-            <div className="flex items-center justify-between px-2">
-              <p className="text-lg font-medium">{currency}{show.showPrice}</p>
-              <p className="flex items-center gap-1 text-sm text-gray-400 mt-1 pr-1">
-                <StarIcon className="w-4 h-4 text-primary fill-primary" />
-                {show.movie.vote_average.toFixed(1)}
-              </p>
+        {(() => {
+          // Group by theater
+          const grouped = dashboardData.activeShows.reduce((acc, show) => {
+            const key = show.theater?._id?.toString() || 'unassigned'
+            if (!acc[key]) acc[key] = { theater: show.theater || { name: 'Unassigned', city: '' }, shows: [] }
+            acc[key].shows.push(show)
+            return acc
+          }, {})
+
+          if (Object.keys(grouped).length === 0) {
+            return <p className="text-gray-400 text-sm">No upcoming shows.</p>
+          }
+
+          return Object.values(grouped).map((group) => (
+            <div key={group.theater._id || 'unassigned'}>
+              {/* Theater header */}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20">
+                  <MapPinIcon className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold">{group.theater.name}</p>
+                  {group.theater.city && <p className="text-xs text-gray-400">{group.theater.city}</p>}
+                </div>
+                <span className="ml-auto text-xs text-gray-500 bg-primary/10 px-2 py-0.5 rounded-full">
+                  {group.shows.length} show{group.shows.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-lg border border-primary/20">
+                <table className="w-full border-collapse text-nowrap text-sm">
+                  <thead>
+                    <tr className="bg-primary/20 text-left text-white">
+                      <th className="p-2 pl-4 font-medium">Movie</th>
+                      <th className="p-2 font-medium">Date & Time</th>
+                      <th className="p-2 font-medium">Price</th>
+                      <th className="p-2 font-medium">Bookings</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-light">
+                    {group.shows.map((show, i) => {
+                      const booked = Object.keys(show.occupiedSeats).length
+                      return (
+                        <tr
+                          key={show._id}
+                          className={`border-b border-primary/10 ${i % 2 === 0 ? 'bg-primary/5' : 'bg-primary/10'}`}
+                        >
+                          <td className="p-2 pl-4 font-medium">{show.movie.title}</td>
+                          <td className="p-2 text-gray-300">{dateFormat(show.showDateTime)}</td>
+                          <td className="p-2 text-gray-300">{currency}{show.showPrice}</td>
+                          <td className="p-2 text-gray-300">{booked}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <p className="px-2 pt-2 text-sm text-gray-500">{dateFormat(show.showDateTime)}</p>
-          </div>
-        ))}
+          ))
+        })()}
       </div>
     </>
   ) : <Loading />

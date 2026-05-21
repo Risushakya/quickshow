@@ -9,7 +9,7 @@ export const getDashboardData = async (req, res) => {
       User.countDocuments(),
       Show.find({ showDateTime: { $gte: new Date() } })
         .sort({ showDateTime: 1 })
-        .limit(6),
+        .limit(20),
       Booking.find({ isPaid: true }),
     ]);
 
