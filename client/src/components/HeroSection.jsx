@@ -160,42 +160,44 @@ const HeroSection = () => {
             key={m._id}
             className='absolute inset-0 bg-cover bg-center transition-opacity duration-700'
             style={{
-              backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.88) 40%, rgba(0,0,0,0.25)), url(${m.backdrop_path})`,
+              backgroundImage: `url(${m.backdrop_path})`,
               opacity: i === current ? 1 : 0,
             }}
           />
         ))}
+        {/* Overlay: full dark on mobile, side-gradient on desktop */}
+        <div className='absolute inset-0 bg-black/70 md:bg-gradient-to-r md:from-black/90 md:via-black/70 md:to-black/20' />
 
         {/* Content */}
         <div
-          className={`relative z-10 flex flex-col items-start justify-center gap-4 h-full px-6 md:px-16 lg:px-36 transition-opacity duration-400 ${animating ? 'opacity-0' : 'opacity-100'}`}
+          className={`relative z-10 flex flex-col items-start justify-center gap-3 md:gap-4 h-full px-6 md:px-16 lg:px-36 pb-16 transition-opacity duration-400 ${animating ? 'opacity-0' : 'opacity-100'}`}
         >
-          <p className='text-primary font-medium uppercase tracking-widest text-sm'>Now Showing</p>
+          <p className='text-primary font-medium uppercase tracking-widest text-xs sm:text-sm'>Now Showing</p>
 
-          <h1 className='text-5xl md:text-[70px] md:leading-18 font-semibold max-w-110'>
+          <h1 className='text-3xl sm:text-5xl md:text-[70px] md:leading-18 font-semibold max-w-full md:max-w-110'>
             {movie.title}
           </h1>
 
-          <div className='flex items-center gap-4 text-gray-300 flex-wrap'>
+          <div className='flex items-center gap-3 text-gray-300 flex-wrap text-xs sm:text-sm'>
             <span>{movie.genres.slice(0, 3).map(g => g.name).join(' | ')}</span>
             <div className='flex items-center gap-1'>
-              <CalendarIcon className='w-4.5 h-4.5' />
+              <CalendarIcon className='w-4 h-4' />
               {movie.release_date?.split('-')[0]}
             </div>
             {movie.runtime > 0 && (
               <div className='flex items-center gap-1'>
-                <ClockIcon className='w-4.5 h-4.5' />
+                <ClockIcon className='w-4 h-4' />
                 {timeFormat(movie.runtime)}
               </div>
             )}
           </div>
 
-          <p className='max-w-md text-gray-300 line-clamp-3'>{movie.overview}</p>
+          <p className='hidden sm:block max-w-md text-gray-300 text-sm line-clamp-3'>{movie.overview}</p>
 
           <div className='flex items-center gap-3 flex-wrap mt-1'>
             <button
               onClick={() => { navigate(`/movies/${movie._id}`); scrollTo(0, 0) }}
-              className='flex items-center gap-2 px-6 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer'
+              className='flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer'
             >
               Book Tickets
               <ArrowRight className='w-4 h-4' />
@@ -204,7 +206,7 @@ const HeroSection = () => {
             <button
               onClick={handleWatchTrailer}
               disabled={trailerLoading}
-              className='flex items-center gap-2 px-6 py-3 text-sm bg-white/10 hover:bg-white/20 border border-white/20 transition rounded-full font-medium cursor-pointer backdrop-blur-sm disabled:opacity-60'
+              className='flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 text-sm bg-white/10 hover:bg-white/20 border border-white/20 transition rounded-full font-medium cursor-pointer backdrop-blur-sm disabled:opacity-60'
             >
               <PlayCircleIcon className='w-4 h-4' />
               {trailerLoading ? 'Loading...' : 'Watch Trailer'}

@@ -18,33 +18,30 @@ const MovieDetails = () => {
   const { user } = useUser()
   const { shows, baseURL, currency } = useAppContext()
 
+  const movieFromContext = shows.find(m => String(m._id) === id || String(m.id) === id)
+
   const [show, setShow] = useState(null)
   const [isFavorite, setIsFavorite] = useState(false)
   const [trailerKey, setTrailerKey] = useState(null)
   const [showTrailer, setShowTrailer] = useState(false)
 
+  // Fetch show details + trailer in parallel
   useEffect(() => {
-    const fetchShow = async () => {
+    const fetchAll = async () => {
       try {
-        const { data } = await axios.get(`${baseURL}/api/show/${id}`)
-        if (data.success) setShow(data)
+        const [showRes, trailerRes] = await Promise.all([
+          axios.get(`${baseURL}/api/show/${id}`).catch(() => null),
+          axios.get(`${baseURL}/api/show/trailer/${id}`).catch(() => null),
+        ])
+        if (showRes?.data?.success) setShow(showRes.data)
+        else toast.error('Failed to load movie details')
+        if (trailerRes?.data?.success && trailerRes.data.key) setTrailerKey(trailerRes.data.key)
       } catch (e) {
         console.error(e)
         toast.error('Failed to load movie details')
       }
     }
-    fetchShow()
-  }, [id])
-
-  // Fetch trailer key for this specific movie
-  useEffect(() => {
-    const fetchTrailer = async () => {
-      try {
-        const { data } = await axios.get(`${baseURL}/api/show/trailer/${id}`)
-        if (data.success && data.key) setTrailerKey(data.key)
-      } catch { /* no trailer available */ }
-    }
-    fetchTrailer()
+    fetchAll()
   }, [id])
 
   useEffect(() => {
@@ -88,8 +85,12 @@ const MovieDetails = () => {
     }
   }
 
-  return show ? (
-    <div className="px-6 md:px-16 lg:px-40 pt-30 md:pt-50">
+  const displayMovie = show?.movie || movieFromContext
+
+  if (!displayMovie) return <Loading />
+
+  return (
+    <div className="px-6 md:px-16 lg:px-40 pt-24 md:pt-40 pb-20">
 
       {/* Trailer Modal */}
       {showTrailer && trailerKey && (
@@ -120,46 +121,46 @@ const MovieDetails = () => {
         </div>
       )}
 
-      <div className='flex flex-col md:flex-row gap-8 max-w-6xl mx-auto'>
+      <div className='flex flex-col sm:flex-row gap-6 md:gap-8 max-w-6xl mx-auto'>
         <img
-          src={show.movie.poster_path}
-          alt={show.movie.title}
-          className='max-md:mx-auto rounded-xl h-104 max-w-70 object-cover'
+          src={displayMovie.poster_path}
+          alt={displayMovie.title}
+          className='mx-auto sm:mx-0 rounded-xl h-72 sm:h-88 md:h-104 w-auto max-w-52 sm:max-w-60 md:max-w-70 object-cover flex-shrink-0'
         />
 
         <div className='relative flex flex-col gap-3'>
           <BlurCircle top="-100px" left="-100px" />
-          <p className='text-primary'>{show.movie.original_language?.toUpperCase() || 'ENGLISH'}</p>
-          <h1 className='text-4xl font-semibold max-w-96 text-balance'>
-            {show.movie.title}
+          <p className='text-primary text-sm'>{displayMovie.original_language?.toUpperCase() || 'ENGLISH'}</p>
+          <h1 className='text-2xl sm:text-3xl md:text-4xl font-semibold text-balance'>
+            {displayMovie.title}
           </h1>
 
-          <div className='flex items-center gap-2 text-gray-300'>
-            <StarIcon className='w-5 h-5 text-primary fill-primary' />
-            {show.movie.vote_average.toFixed(1)} User Rating
+          <div className='flex items-center gap-2 text-gray-300 text-sm'>
+            <StarIcon className='w-4 h-4 text-primary fill-primary' />
+            {displayMovie.vote_average?.toFixed(1)} User Rating
           </div>
 
-          <p className='text-gray-400 mt-2 text-sm leading-tight max-w-xl'>
-            {show.movie.overview}
+          <p className='text-gray-400 mt-1 text-sm leading-relaxed max-w-xl line-clamp-4 md:line-clamp-none'>
+            {displayMovie.overview}
           </p>
 
-          <p>
-            {timeFormat(show.movie.runtime)} |{' '}
-            {show.movie.genres.map((g) => g.name).join(', ')} |{' '}
-            {show.movie.release_date.split('-')[0]}
+          <p className='text-sm text-gray-300'>
+            {displayMovie.runtime > 0 ? `${timeFormat(displayMovie.runtime)} | ` : ''}
+            {displayMovie.genres?.map((g) => g.name).join(', ')} |{' '}
+            {displayMovie.release_date?.split('-')[0]}
           </p>
 
-          <div className='flex items-center flex-wrap gap-4 mt-4'>
+          <div className='flex items-center flex-wrap gap-3 mt-3'>
             <button
               onClick={() => trailerKey ? setShowTrailer(true) : toast('No trailer available')}
-              className='flex items-center gap-2 px-7 py-3 text-sm bg-gray-800 hover:bg-gray-900 transition rounded-md font-medium cursor-pointer active:scale-95'
+              className='flex items-center gap-2 px-5 py-2.5 text-sm bg-gray-800 hover:bg-gray-900 transition rounded-md font-medium cursor-pointer active:scale-95'
             >
               <PlayCircleIcon className="w-5 h-5" />
               Watch Trailer
             </button>
             <a
               href="#dateSelect"
-              className='px-10 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-md font-medium cursor-pointer active:scale-95'
+              className='px-8 py-2.5 text-sm bg-primary hover:bg-primary-dull transition rounded-md font-medium cursor-pointer active:scale-95'
             >
               Buy Tickets
             </a>
@@ -173,41 +174,55 @@ const MovieDetails = () => {
         </div>
       </div>
 
-      <p className='text-lg font-medium mt-20'>Your Favorite Cast</p>
-      <div className='overflow-x-auto no-scrollbar mt-8 pb-4'>
-        <div className='flex items-center gap-4 w-max px-4'>
-          {show.movie.casts.slice(0, 10).map((cast, index) => (
-            <div key={index} className='flex flex-col items-center text-center'>
-              <img
-                src={cast.profile_path || 'https://placehold.co/80x80/1a1a2e/ffffff?text=?'}
-                alt={cast.name}
-                onError={(e) => { e.target.src = 'https://placehold.co/80x80/1a1a2e/ffffff?text=?' }}
-                className='rounded-full h-20 aspect-square object-cover'
-              />
-              <p className='font-medium text-xs mt-3'>{cast.name}</p>
+      {show?.movie?.casts?.length > 0 && (
+        <>
+          <p className='text-lg font-medium mt-16 md:mt-20'>Your Favorite Cast</p>
+          <div className='overflow-x-auto no-scrollbar mt-6 pb-4'>
+            <div className='flex items-center gap-4 w-max px-1'>
+              {show.movie.casts.slice(0, 10).map((cast, index) => (
+                <div key={index} className='flex flex-col items-center text-center w-16 sm:w-20'>
+                  <img
+                    src={cast.profile_path || 'https://placehold.co/80x80/1a1a2e/ffffff?text=?'}
+                    alt={cast.name}
+                    onError={(e) => { e.target.src = 'https://placehold.co/80x80/1a1a2e/ffffff?text=?' }}
+                    className='rounded-full h-14 w-14 sm:h-20 sm:w-20 object-cover'
+                  />
+                  <p className='font-medium text-xs mt-2 leading-tight'>{cast.name}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {Object.keys(show.dateTime).length > 0 ? (
-        <DateSelect dateTime={show.dateTime} id={id} />
-      ) : (
-        <div id="dateSelect" className="pt-30">
-          <div className='flex items-center justify-center p-8 bg-primary/10 border border-primary/20 rounded-lg'>
-            <p className='text-gray-400 text-lg'>No shows scheduled for this movie yet.</p>
           </div>
+        </>
+      )}
+
+      {show ? (
+        Object.keys(show.dateTime).length > 0 ? (
+          <DateSelect dateTime={show.dateTime} id={id} />
+        ) : (
+          <div id="dateSelect" className="pt-20">
+            <div className='flex items-center justify-center p-8 bg-primary/10 border border-primary/20 rounded-lg'>
+              <p className='text-gray-400'>No shows scheduled for this movie yet.</p>
+            </div>
+          </div>
+        )
+      ) : (
+        <div id="dateSelect" className="pt-20 flex justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
-      <p className='text-lg font-medium mt-20 mb-8'>You May Also Like</p>
-      <div className='flex flex-wrap max-sm:justify-center gap-8'>
-        {shows.slice(0, 3).map((movie, index) => (
-          <MovieCard movie={movie} key={index} />
-        ))}
-      </div>
+      {shows.filter(m => String(m._id) !== id).length > 0 && (
+        <>
+          <p className='text-lg font-medium mt-16 md:mt-20 mb-6'>You May Also Like</p>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+            {shows.filter(m => String(m._id) !== id).slice(0, 3).map((movie, index) => (
+              <MovieCard movie={movie} key={index} />
+            ))}
+          </div>
+        </>
+      )}
 
-      <div className='flex justify-center mt-20'>
+      <div className='flex justify-center mt-12 md:mt-20'>
         <button
           className='px-10 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-md font-medium cursor-pointer'
           onClick={() => { navigate('/movies'); scrollTo(0, 0) }}
@@ -216,7 +231,7 @@ const MovieDetails = () => {
         </button>
       </div>
     </div>
-  ) : <Loading />
+  )
 }
 
 export default MovieDetails

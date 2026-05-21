@@ -80,7 +80,7 @@ const TrailerSection = () => {
       </div>
 
       {/* Thumbnail strip */}
-      <div className='group grid grid-cols-4 gap-4 md:gap-6 mt-6 max-w-[960px] mx-auto'>
+      <div className='group grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 md:gap-6 mt-6 max-w-[960px] mx-auto'>
         {trailers.slice(0, 4).map((trailer) => {
           const isActive = currentTrailer.videoUrl === trailer.videoUrl
           return (

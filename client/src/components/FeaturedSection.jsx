@@ -22,7 +22,7 @@ const FeaturedSection = () => {
         </button>
       </div>
 
-      <div className='flex flex-wrap max-sm:justify-center gap-8 mt-8'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8'>
         {shows.slice(0, 3).map((show) => (
           <MovieCard key={show._id} movie={show} />
         ))}
