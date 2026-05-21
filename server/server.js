@@ -20,13 +20,23 @@ const port = process.env.PORT || 3000;
 
 await connectDB();
 
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    process.env.CLIENT_URL,
-  ].filter(Boolean),
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowed = [
+      'http://localhost:5173',
+      process.env.CLIENT_URL,
+    ].filter(Boolean);
+    // Allow requests with no origin (server-to-server, curl, etc.)
+    if (!origin || allowed.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Stripe webhook needs raw body — must be before express.json()
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
